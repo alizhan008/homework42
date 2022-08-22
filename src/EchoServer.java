@@ -1,16 +1,16 @@
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class EchoServer {
 
     private final int port;
+
+    private final ExecutorService pool = Executors.newCachedThreadPool();
 
     private EchoServer(int port) {
         this.port = port;
@@ -22,8 +22,9 @@ public class EchoServer {
 
     public void run() {
         try (ServerSocket server = new ServerSocket(port)) {
-            try (Socket clientSocket = server.accept()) {
-                handle(clientSocket);
+            while (!server.isClosed()){
+                Socket clientSocket = server.accept();
+                pool.submit(() ->  handle(clientSocket));
             }
         } catch (IOException e) {
             System.out.printf("Вероятнее всего порт %s занят.%n", port);
@@ -31,29 +32,55 @@ public class EchoServer {
         }
     }
 
-    private void handle(Socket socket) throws IOException {
-        InputStream input = socket.getInputStream();
-        InputStreamReader isr = new InputStreamReader(input, StandardCharsets.UTF_8);
+    private void handle(Socket socket) {
+        System.out.printf("Подключен клиент: %s%n",socket);
 
-        try (Scanner sc = new Scanner(isr)) {
+
+        try (Scanner reader = getReader(socket);
+            PrintWriter writer = getWriter(socket)) {
             while (true) {
-                String message = sc.nextLine().strip();
-                System.out.printf("Got: %s%n", message);
-                if ("bye".equalsIgnoreCase(message)) {
-                    System.out.println("bye bye!");
-                    return;
+                String message = reader.nextLine().strip();
+                System.out.printf("Клиент: %s отправил смс: %s%n",socket, message);
+
+                if (isEmptyMsg(message) || isQuitMsg(message)) {
+                    break;
                 }
-                PrintWriter writer = new PrintWriter(socket.getOutputStream());
-                writer.write(reverseString(message));
-                writer.write(System.lineSeparator());
-                writer.flush();
+                sendResponse(writer);
             }
         } catch (NoSuchElementException e) {
-            System.out.print("Client dropped the connection");
-            e.printStackTrace();
+            System.out.printf("Клиент %s закрыл соединение!",socket);
+        }catch (IOException ex){
+            ex.printStackTrace();
+            System.out.printf("Клиент отключен: %s%n", socket);
         }
     }
-    public static String reverseString(String str) {
-        return new StringBuilder(str).reverse().toString();
+
+    private PrintWriter getWriter(Socket socket) throws IOException {
+        OutputStream stream = socket.getOutputStream();
+        return new PrintWriter(stream);
     }
+
+    private Scanner getReader(Socket socket) throws IOException {
+        InputStream stream = socket.getInputStream();
+        InputStreamReader input = new InputStreamReader(stream,"UTF-8");
+        return new Scanner(input);
+    }
+
+    private boolean isQuitMsg(String message){
+        return "bye".equalsIgnoreCase(message);
+    }
+
+    private boolean isEmptyMsg(String message){
+        return message == null || message.isBlank();
+    }
+
+    private void sendResponse(Writer writer) throws IOException {
+        System.out.print("Введите сообщение: ");
+        Scanner scanner = new Scanner(System.in);
+        String msg = scanner.nextLine();
+        writer.write(msg);
+        writer.write(System.lineSeparator());
+        writer.flush();
+    }
+
 }
