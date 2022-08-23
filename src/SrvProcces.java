@@ -15,6 +15,7 @@ public class SrvProcces {
             }
             for (Map.Entry<Socket, String> sockets : EchoServer.stringSocketMap.entrySet()) {
                 PrintWriter writer = getWriter(sockets.getKey());
+                System.out.printf("ќтправить сообщение: %s: %n",EchoServer.stringSocketMap.get(socket));
                 sendResponse(writer);
 
             }
@@ -47,7 +48,6 @@ public class SrvProcces {
 
     public void sendResponse(Writer writer) throws IOException {
         try {
-            System.out.println("¬ведите ответ: ");
             Scanner scanner = new Scanner(System.in);
             String msg = scanner.nextLine();
             writer.write(msg);
