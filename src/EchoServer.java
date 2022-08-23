@@ -1,13 +1,9 @@
-import com.sun.source.tree.Scope;
-
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-
 
 public class EchoServer {
 
@@ -25,7 +21,6 @@ public class EchoServer {
     }
 
     public void run() {
-
         try (ServerSocket server = new ServerSocket(port)) {
             while (!server.isClosed()){
                 Socket clientSocket = server.accept();
