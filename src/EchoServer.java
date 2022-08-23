@@ -6,20 +6,16 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class EchoServer {
-
     private final int port;
     SrvProcces srvProcces = new SrvProcces();
     private final ExecutorService pool = Executors.newCachedThreadPool();
     public static Map<Socket,String> stringSocketMap = new HashMap<>();
-
     private EchoServer(int port) {
         this.port = port;
     }
-
     public static EchoServer bindToPort(int port) {
         return new EchoServer(port);
     }
-
     public void run() {
         try (ServerSocket server = new ServerSocket(port)) {
             while (!server.isClosed()){
@@ -32,7 +28,6 @@ public class EchoServer {
             e.printStackTrace();
         }
     }
-
     private String name() {
         ArrayList<String> strings = new ArrayList<String>();
         strings.add("John");
